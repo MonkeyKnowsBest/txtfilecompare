@@ -115,10 +115,15 @@ function App() {
   const downloadResults = useCallback(() => {
     if (!results) return;
 
+    // Format the output as tab-separated strings
+    const firstLine = results.wordsOnlyInFirst.join('\t');
+    const secondLine = results.wordsOnlyInSecond.join('\t');
+    const allLine = results.allDifferences.join('\t');
+
     const content = 
-      `Words only in first file (${results.wordsOnlyInFirst.length}):\n${results.wordsOnlyInFirst.join('\n')}\n\n` +
-      `Words only in second file (${results.wordsOnlyInSecond.length}):\n${results.wordsOnlyInSecond.join('\n')}\n\n` +
-      `All differences (${results.allDifferences.length}):\n${results.allDifferences.join('\n')}`;
+      `Words only in first file:\n${firstLine}\n\n` +
+      `Words only in second file:\n${secondLine}\n\n` +
+      `All differences:\n${allLine}`;
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -183,29 +188,19 @@ function App() {
         )}
 
         {results && (
-          <div className="bg-white rounded-lg p-4 mb-6">
-            <p className="text-center text-gray-700">
-              Found <strong>{results.wordsOnlyInFirst.length}</strong> words only in first file, 
-              <strong> {results.wordsOnlyInSecond.length}</strong> words only in second file, 
-              and <strong>{results.allDifferences.length}</strong> total differences.
-            </p>
-          </div>
-        )}
-
-        {results && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <ResultsSection
-              title={`Only in First File (${results.wordsOnlyInFirst.length})`}
+              title="Only in First File"
               words={results.wordsOnlyInFirst}
               className="bg-red-50"
             />
             <ResultsSection
-              title={`Only in Second File (${results.wordsOnlyInSecond.length})`}
+              title="Only in Second File"
               words={results.wordsOnlyInSecond}
               className="bg-blue-50"
             />
             <ResultsSection
-              title={`All Differences (${results.allDifferences.length})`}
+              title="All Differences"
               words={results.allDifferences}
               className="bg-purple-50"
             />
