@@ -2,90 +2,116 @@ import React, { useState, useCallback } from 'react';
 import { Upload, Download, AlertCircle } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { ResultsSection } from './components/ResultsSection';
-import { findDifferences, alphabetizeWithPrefix } from './utils/comparison';
+
+// Utility functions moved directly into App for simplicity
+function findUniqueWords(list1: string[], list2: string[]): {
+  onlyInFirst: string[];
+  onlyInSecond: string[];
+} {
+  // Create Sets from the arrays for O(1) lookups
+  const set1 = new Set(list1);
+  const set2 = new Set(list2);
+  
+  // Find words only in first list
+  const onlyInFirst: string[] = [];
+  set1.forEach(word => {
+    if (!set2.has(word)) {
+      onlyInFirst.push(word);
+    }
+  });
+  
+  // Find words only in second list
+  const onlyInSecond: string[] = [];
+  set2.forEach(word => {
+    if (!set1.has(word)) {
+      onlyInSecond.push(word);
+    }
+  });
+  
+  return { onlyInFirst, onlyInSecond };
+}
+
+function alphabetizeWords(words: string[]): string[] {
+  return [...words].sort((a, b) => {
+    // Remove $ prefix for alphabetical sorting
+    const aWord = a.slice(1).toLowerCase();
+    const bWord = b.slice(1).toLowerCase();
+    return aWord.localeCompare(bWord);
+  });
+}
 
 function App() {
-  const [file1Words, setFile1Words] = useState<string[]>([]);
-  const [file2Words, setFile2Words] = useState<string[]>([]);
+  // File content state with different variable names to avoid confusion
+  const [firstFileContent, setFirstFileContent] = useState<string[]>([]);
+  const [secondFileContent, setSecondFileContent] = useState<string[]>([]);
+  
+  // Results state
   const [results, setResults] = useState<{
-    onlyInFirst: string[];
-    onlyInSecond: string[];
+    wordsOnlyInFirst: string[];
+    wordsOnlyInSecond: string[];
     allDifferences: string[];
   } | null>(null);
 
-const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
-  // Log which file is being processed
-  console.log(`Processing file ${fileNumber}`);
-  
-  // Split by newlines and process each line
-  const words = content
-    .split('\n')
-    .map(line => line.trim())
-    .filter(word => word.startsWith('$') && word.length > 1);
-  
-  console.log(`Found ${words.length} words in file ${fileNumber}`);
-  
-  // Create a unique ID for debugging
-  const uniqueId = `file${fileNumber}-${Date.now()}`;
-  console.log(`File ID: ${uniqueId}`);
-  
-  // Make sure we're setting the correct state variable
-  if (fileNumber === 1) {
-    console.log('Setting file1Words');
-    setFile1Words(words);
-  } else if (fileNumber === 2) {
-    console.log('Setting file2Words');
-    setFile2Words(words);
-  } else {
-    console.error('Invalid file number', fileNumber);
-  }
-}, []);
+  // Process file content
+  const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
+    // Extract words that start with $
+    const words = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(word => word.startsWith('$') && word.length > 1);
+    
+    console.log(`File ${fileNumber} has ${words.length} words`);
+    
+    // Set the appropriate state based on file number
+    if (fileNumber === 1) {
+      setFirstFileContent(words);
+    } else {
+      setSecondFileContent(words);
+    }
+  }, []);
 
-// Also add this effect to verify state updates
-useEffect(() => {
-  console.log('file1Words updated:', file1Words.length);
-}, [file1Words]);
+  // Compare the files
+  const compareFiles = useCallback(() => {
+    // Don't proceed if either file is empty
+    if (firstFileContent.length === 0 || secondFileContent.length === 0) {
+      console.error("Both files must have content");
+      return;
+    }
+    
+    console.log("First file has", firstFileContent.length, "words");
+    console.log("Second file has", secondFileContent.length, "words");
+    
+    // Find the unique words in each file
+    const { onlyInFirst, onlyInSecond } = findUniqueWords(
+      firstFileContent, 
+      secondFileContent
+    );
+    
+    console.log("Words only in first file:", onlyInFirst.length);
+    console.log("Words only in second file:", onlyInSecond.length);
+    
+    // Sort the results
+    const sortedFirst = alphabetizeWords(onlyInFirst);
+    const sortedSecond = alphabetizeWords(onlyInSecond);
+    
+    // Combine all differences
+    const allDifferences = alphabetizeWords([...onlyInFirst, ...onlyInSecond]);
+    
+    // Set the results
+    setResults({
+      wordsOnlyInFirst: sortedFirst,
+      wordsOnlyInSecond: sortedSecond,
+      allDifferences
+    });
+  }, [firstFileContent, secondFileContent]);
 
-useEffect(() => {
-  console.log('file2Words updated:', file2Words.length);
-}, [file2Words]);
-  
-const compareFiles = useCallback(() => {
-  if (file1Words.length === 0 || file2Words.length === 0) return;
-
-  console.log('File 1 words:', file1Words);
-  console.log('File 2 words:', file2Words);
-  
-  // Find differences between the two word lists
-  const { onlyInFirst, onlyInSecond } = findDifferences(file1Words, file2Words);
-  
-  console.log('Only in first:', onlyInFirst);
-  console.log('Only in second:', onlyInSecond);
-  
-  // Sort the results alphabetically
-  const sortedFirst = alphabetizeWithPrefix(onlyInFirst);
-  const sortedSecond = alphabetizeWithPrefix(onlyInSecond);
-  
-  // Combine both lists for "all differences" while ensuring uniqueness
-  const allDifferences = alphabetizeWithPrefix([...onlyInFirst, ...onlyInSecond]);
-  
-  console.log('Results:', {
-    onlyInFirst: sortedFirst,
-    onlyInSecond: sortedSecond,
-    allDifferences
-  });
-  
-  setResults({
-    onlyInFirst: sortedFirst,
-    onlyInSecond: sortedSecond,
-    allDifferences
-  });
-}, [file1Words, file2Words]);
+  // Download the results
   const downloadResults = useCallback(() => {
     if (!results) return;
 
-    const content = `Words only in first file:\n${results.onlyInFirst.join('\n')}\n\n` +
-      `Words only in second file:\n${results.onlyInSecond.join('\n')}\n\n` +
+    const content = 
+      `Words only in first file:\n${results.wordsOnlyInFirst.join('\n')}\n\n` +
+      `Words only in second file:\n${results.wordsOnlyInSecond.join('\n')}\n\n` +
       `All differences:\n${results.allDifferences.join('\n')}`;
 
     const blob = new Blob([content], { type: 'text/plain' });
@@ -113,21 +139,21 @@ const compareFiles = useCallback(() => {
             label="First File"
             icon={<Upload className="w-6 h-6" />}
             fileNumber={1}
-            hasContent={file1Words.length > 0}
+            hasContent={firstFileContent.length > 0}
           />
           <FileUploader
             onFileContent={(content) => handleFileContent(content, 2)}
             label="Second File"
             icon={<Upload className="w-6 h-6" />}
             fileNumber={2}
-            hasContent={file2Words.length > 0}
+            hasContent={secondFileContent.length > 0}
           />
         </div>
 
         <div className="flex justify-center gap-4 mb-8">
           <button
             onClick={compareFiles}
-            disabled={file1Words.length === 0 || file2Words.length === 0}
+            disabled={firstFileContent.length === 0 || secondFileContent.length === 0}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             Compare Files
@@ -143,7 +169,7 @@ const compareFiles = useCallback(() => {
           )}
         </div>
 
-        {!results && file1Words.length > 0 && file2Words.length > 0 && (
+        {!results && firstFileContent.length > 0 && secondFileContent.length > 0 && (
           <div className="flex items-center justify-center text-gray-600 gap-2">
             <AlertCircle className="w-5 h-5" />
             <span>Click Compare Files to see the results</span>
@@ -154,12 +180,12 @@ const compareFiles = useCallback(() => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <ResultsSection
               title="Only in First File"
-              words={results.onlyInFirst}
+              words={results.wordsOnlyInFirst}
               className="bg-red-50"
             />
             <ResultsSection
               title="Only in Second File"
-              words={results.onlyInSecond}
+              words={results.wordsOnlyInSecond}
               className="bg-blue-50"
             />
             <ResultsSection
