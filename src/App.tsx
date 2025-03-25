@@ -13,22 +13,43 @@ function App() {
     allDifferences: string[];
   } | null>(null);
 
-  const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
-  // Split by newlines, trim each line, and filter for valid entries (start with $ and have content)
+const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
+  // Log which file is being processed
+  console.log(`Processing file ${fileNumber}`);
+  
+  // Split by newlines and process each line
   const words = content
     .split('\n')
     .map(line => line.trim())
     .filter(word => word.startsWith('$') && word.length > 1);
   
-  console.log(`File ${fileNumber} processed, found ${words.length} words`);
-
+  console.log(`Found ${words.length} words in file ${fileNumber}`);
+  
+  // Create a unique ID for debugging
+  const uniqueId = `file${fileNumber}-${Date.now()}`;
+  console.log(`File ID: ${uniqueId}`);
+  
+  // Make sure we're setting the correct state variable
   if (fileNumber === 1) {
+    console.log('Setting file1Words');
     setFile1Words(words);
-  } else {
+  } else if (fileNumber === 2) {
+    console.log('Setting file2Words');
     setFile2Words(words);
+  } else {
+    console.error('Invalid file number', fileNumber);
   }
 }, []);
-// In App.tsx, replace the compareFiles function with this:
+
+// Also add this effect to verify state updates
+useEffect(() => {
+  console.log('file1Words updated:', file1Words.length);
+}, [file1Words]);
+
+useEffect(() => {
+  console.log('file2Words updated:', file2Words.length);
+}, [file2Words]);
+  
 const compareFiles = useCallback(() => {
   if (file1Words.length === 0 || file2Words.length === 0) return;
 
