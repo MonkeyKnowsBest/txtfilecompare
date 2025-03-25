@@ -26,20 +26,22 @@ function App() {
     }
   }, []);
 
-  const compareFiles = useCallback(() => {
-    if (file1Words.length === 0 || file2Words.length === 0) return;
+const compareFiles = useCallback(() => {
+  if (file1Words.length === 0 || file2Words.length === 0) return;
 
-    const { onlyInFirst, onlyInSecond } = findDifferences(file1Words, file2Words);
-    const sortedFirst = alphabetizeWithPrefix(onlyInFirst);
-    const sortedSecond = alphabetizeWithPrefix(onlyInSecond);
-    const allDifferences = alphabetizeWithPrefix([...onlyInFirst, ...onlyInSecond]);
+  const { onlyInFirst, onlyInSecond } = findDifferences(file1Words, file2Words);
+  const sortedFirst = alphabetizeWithPrefix(onlyInFirst);
+  const sortedSecond = alphabetizeWithPrefix(onlyInSecond);
+  
+  // Use a Set to ensure unique entries in allDifferences
+  const allDifferences = alphabetizeWithPrefix([...new Set([...onlyInFirst, ...onlyInSecond])]);
 
-    setResults({
-      onlyInFirst: sortedFirst,
-      onlyInSecond: sortedSecond,
-      allDifferences,
-    });
-  }, [file1Words, file2Words]);
+  setResults({
+    onlyInFirst: sortedFirst,
+    onlyInSecond: sortedSecond,
+    allDifferences,
+  });
+}, [file1Words, file2Words]);
 
   const downloadResults = useCallback(() => {
     if (!results) return;
