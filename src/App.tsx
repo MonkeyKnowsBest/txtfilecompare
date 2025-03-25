@@ -3,7 +3,7 @@ import { Upload, Download, AlertCircle } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { ResultsSection } from './components/ResultsSection';
 
-// Utility functions moved directly into App for simplicity
+// Utility functions for word comparison
 function findUniqueWords(list1: string[], list2: string[]): {
   onlyInFirst: string[];
   onlyInSecond: string[];
@@ -34,14 +34,23 @@ function findUniqueWords(list1: string[], list2: string[]): {
 function alphabetizeWords(words: string[]): string[] {
   return [...words].sort((a, b) => {
     // Remove $ prefix for alphabetical sorting
-    const aWord = a.slice(1).toLowerCase();
-    const bWord = b.slice(1).toLowerCase();
+    const aWord = a.startsWith('$') ? a.slice(1).toLowerCase() : a.toLowerCase();
+    const bWord = b.startsWith('$') ? b.slice(1).toLowerCase() : b.toLowerCase();
     return aWord.localeCompare(bWord);
   });
 }
 
+// Parse a single line of tab-separated values into an array of words
+function parseTabSeparatedWords(content: string): string[] {
+  // Split the content by tabs and remove any empty strings
+  return content
+    .trim()
+    .split(/\t+/)
+    .filter(word => word.length > 0 && word.startsWith('$'));
+}
+
 function App() {
-  // File content state with different variable names to avoid confusion
+  // File content state
   const [firstFileContent, setFirstFileContent] = useState<string[]>([]);
   const [secondFileContent, setSecondFileContent] = useState<string[]>([]);
   
@@ -54,11 +63,8 @@ function App() {
 
   // Process file content
   const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
-    // Extract words that start with $
-    const words = content
-      .split('\n')
-      .map(line => line.trim())
-      .filter(word => word.startsWith('$') && word.length > 1);
+    // Parse the content as tab-separated words
+    const words = parseTabSeparatedWords(content);
     
     console.log(`File ${fileNumber} has ${words.length} words`);
     
@@ -110,9 +116,9 @@ function App() {
     if (!results) return;
 
     const content = 
-      `Words only in first file:\n${results.wordsOnlyInFirst.join('\n')}\n\n` +
-      `Words only in second file:\n${results.wordsOnlyInSecond.join('\n')}\n\n` +
-      `All differences:\n${results.allDifferences.join('\n')}`;
+      `Words only in first file (${results.wordsOnlyInFirst.length}):\n${results.wordsOnlyInFirst.join('\n')}\n\n` +
+      `Words only in second file (${results.wordsOnlyInSecond.length}):\n${results.wordsOnlyInSecond.join('\n')}\n\n` +
+      `All differences (${results.allDifferences.length}):\n${results.allDifferences.join('\n')}`;
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -130,7 +136,7 @@ function App() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Word Comparison Tool</h1>
-          <p className="text-gray-600">Compare two lists of words with $ prefixes</p>
+          <p className="text-gray-600">Compare two lists of tab-separated words with $ prefixes</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -177,19 +183,29 @@ function App() {
         )}
 
         {results && (
+          <div className="bg-white rounded-lg p-4 mb-6">
+            <p className="text-center text-gray-700">
+              Found <strong>{results.wordsOnlyInFirst.length}</strong> words only in first file, 
+              <strong> {results.wordsOnlyInSecond.length}</strong> words only in second file, 
+              and <strong>{results.allDifferences.length}</strong> total differences.
+            </p>
+          </div>
+        )}
+
+        {results && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <ResultsSection
-              title="Only in First File"
+              title={`Only in First File (${results.wordsOnlyInFirst.length})`}
               words={results.wordsOnlyInFirst}
               className="bg-red-50"
             />
             <ResultsSection
-              title="Only in Second File"
+              title={`Only in Second File (${results.wordsOnlyInSecond.length})`}
               words={results.wordsOnlyInSecond}
               className="bg-blue-50"
             />
             <ResultsSection
-              title="All Differences"
+              title={`All Differences (${results.allDifferences.length})`}
               words={results.allDifferences}
               className="bg-purple-50"
             />
