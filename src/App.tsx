@@ -14,18 +14,20 @@ function App() {
   } | null>(null);
 
   const handleFileContent = useCallback((content: string, fileNumber: 1 | 2) => {
-    const words = content
-      .split('\n')
-      .map(line => line.trim())
-      .filter(word => word.startsWith('$') && word.length > 1);
+  // Split by newlines, trim each line, and filter for valid entries (start with $ and have content)
+  const words = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(word => word.startsWith('$') && word.length > 1);
+  
+  console.log(`File ${fileNumber} processed, found ${words.length} words`);
 
-    if (fileNumber === 1) {
-      setFile1Words(words);
-    } else {
-      setFile2Words(words);
-    }
-  }, []);
-
+  if (fileNumber === 1) {
+    setFile1Words(words);
+  } else {
+    setFile2Words(words);
+  }
+}, []);
 // In App.tsx, replace the compareFiles function with this:
 const compareFiles = useCallback(() => {
   if (file1Words.length === 0 || file2Words.length === 0) return;
