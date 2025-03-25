@@ -26,23 +26,38 @@ function App() {
     }
   }, []);
 
+// In App.tsx, replace the compareFiles function with this:
 const compareFiles = useCallback(() => {
   if (file1Words.length === 0 || file2Words.length === 0) return;
 
+  console.log('File 1 words:', file1Words);
+  console.log('File 2 words:', file2Words);
+  
+  // Find differences between the two word lists
   const { onlyInFirst, onlyInSecond } = findDifferences(file1Words, file2Words);
+  
+  console.log('Only in first:', onlyInFirst);
+  console.log('Only in second:', onlyInSecond);
+  
+  // Sort the results alphabetically
   const sortedFirst = alphabetizeWithPrefix(onlyInFirst);
   const sortedSecond = alphabetizeWithPrefix(onlyInSecond);
   
-  // Use a Set to ensure unique entries in allDifferences
-  const allDifferences = alphabetizeWithPrefix([...new Set([...onlyInFirst, ...onlyInSecond])]);
-
+  // Combine both lists for "all differences" while ensuring uniqueness
+  const allDifferences = alphabetizeWithPrefix([...onlyInFirst, ...onlyInSecond]);
+  
+  console.log('Results:', {
+    onlyInFirst: sortedFirst,
+    onlyInSecond: sortedSecond,
+    allDifferences
+  });
+  
   setResults({
     onlyInFirst: sortedFirst,
     onlyInSecond: sortedSecond,
-    allDifferences,
+    allDifferences
   });
 }, [file1Words, file2Words]);
-
   const downloadResults = useCallback(() => {
     if (!results) return;
 
