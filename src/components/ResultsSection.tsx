@@ -13,7 +13,8 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({
 }) => {
   return (
     <div className={`rounded-lg p-4 ${className}`}>
-      <h2 className="text-lg font-semibold mb-3">{title}</h2>
+      <h2 className="text-lg font-semibold mb-1">{title}</h2>
+      <p className="text-sm text-gray-600 mb-3">Count: {words.length}</p>
       <div className="bg-white rounded-md shadow-sm p-4 overflow-x-auto">
         {!words || words.length === 0 ? (
           <p className="text-gray-500 text-center">No differences found</p>
