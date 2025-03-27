@@ -58,6 +58,7 @@ function App() {
   const [results, setResults] = useState<{
     wordsOnlyInFirst: string[];
     wordsOnlyInSecond: string[];
+    wordsInBoth: string[];
     allDifferences: string[];
   } | null>(null);
 
@@ -93,12 +94,19 @@ function App() {
       secondFileContent
     );
     
+    // Find words that appear in both files
+    const wordsInBoth = firstFileContent.filter(word => 
+      secondFileContent.includes(word)
+    );
+    
     console.log("Words only in first file:", onlyInFirst.length);
     console.log("Words only in second file:", onlyInSecond.length);
+    console.log("Words in both files:", wordsInBoth.length);
     
     // Sort the results
     const sortedFirst = alphabetizeWords(onlyInFirst);
     const sortedSecond = alphabetizeWords(onlyInSecond);
+    const sortedBoth = alphabetizeWords(wordsInBoth);
     
     // Combine all differences
     const allDifferences = alphabetizeWords([...onlyInFirst, ...onlyInSecond]);
@@ -107,6 +115,7 @@ function App() {
     setResults({
       wordsOnlyInFirst: sortedFirst,
       wordsOnlyInSecond: sortedSecond,
+      wordsInBoth: sortedBoth,
       allDifferences
     });
   }, [firstFileContent, secondFileContent]);
@@ -118,12 +127,14 @@ function App() {
     // Format the output as tab-separated strings
     const firstLine = results.wordsOnlyInFirst.join('\t');
     const secondLine = results.wordsOnlyInSecond.join('\t');
+    const bothLine = results.wordsInBoth.join('\t');
     const allLine = results.allDifferences.join('\t');
 
     const content = 
-      `Words only in first file:\n${firstLine}\n\n` +
-      `Words only in second file:\n${secondLine}\n\n` +
-      `All differences:\n${allLine}`;
+      `Words only in first file (${results.wordsOnlyInFirst.length}):\n${firstLine}\n\n` +
+      `Words only in second file (${results.wordsOnlyInSecond.length}):\n${secondLine}\n\n` +
+      `Words in both files (${results.wordsInBoth.length}):\n${bothLine}\n\n` +
+      `All differences (${results.allDifferences.length}):\n${allLine}`;
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -188,23 +199,48 @@ function App() {
         )}
 
         {results && (
-          <div className="grid grid-cols-1 gap-6">
-            <ResultsSection
-              title="Only in First File"
-              words={results.wordsOnlyInFirst}
-              className="bg-red-50"
-            />
-            <ResultsSection
-              title="Only in Second File"
-              words={results.wordsOnlyInSecond}
-              className="bg-blue-50"
-            />
-            <ResultsSection
-              title="All Differences"
-              words={results.allDifferences}
-              className="bg-purple-50"
-            />
-          </div>
+          <>
+            <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+              <h2 className="text-lg font-semibold mb-3">Summary</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col items-center p-3 rounded-md bg-red-50">
+                  <span className="text-2xl font-bold">{results.wordsOnlyInFirst.length}</span>
+                  <span className="text-sm text-gray-600">Only in First File</span>
+                </div>
+                <div className="flex flex-col items-center p-3 rounded-md bg-blue-50">
+                  <span className="text-2xl font-bold">{results.wordsOnlyInSecond.length}</span>
+                  <span className="text-sm text-gray-600">Only in Second File</span>
+                </div>
+                <div className="flex flex-col items-center p-3 rounded-md bg-green-50">
+                  <span className="text-2xl font-bold">{results.wordsInBoth.length}</span>
+                  <span className="text-sm text-gray-600">In Both Files</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              <ResultsSection
+                title="Only in First File"
+                words={results.wordsOnlyInFirst}
+                className="bg-red-50"
+              />
+              <ResultsSection
+                title="Only in Second File"
+                words={results.wordsOnlyInSecond}
+                className="bg-blue-50"
+              />
+              <ResultsSection
+                title="Common Words (In Both Files)"
+                words={results.wordsInBoth}
+                className="bg-green-50"
+              />
+              <ResultsSection
+                title="All Differences"
+                words={results.allDifferences}
+                className="bg-purple-50"
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
